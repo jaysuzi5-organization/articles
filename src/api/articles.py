@@ -266,7 +266,7 @@ def search_articles(
 
                 # Special handling for tags or list-like fields (assuming stored as comma-separated string or array)
                 if field == "tags":
-                    or_conditions.append(column.any(value))
+                    or_conditions.append(column.ilike(f"%{value}%"))
                 else:
                     or_conditions.append(column == value)
 
