@@ -1,31 +1,67 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>articles Test Page</title>
+  <title>Articles Test Page</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>articles Management</h1>
+  <h1>Articles Management</h1>
 
-  <h2>Add articles</h2>
+  <h2>Add Article</h2>
   <form id="articlesForm" autocomplete="off">
     <label>
-      User Name:
-      <input type="text" id="username" required>
+      Title:
+      <input type="text" id="title" required>
     </label>
     <label>
-      Full Name:
-      <input type="text" id="full_name" required>
+      Link:
+      <input type="url" id="link" required>
     </label>
     <label>
-      Email:
-      <input type="email" id="email" required>
+      Summary:
+      <textarea id="summary" required></textarea>
+    </label>
+    <label>
+      Reasons:
+      <textarea id="reasons" required></textarea>
+    </label>
+    <label>
+      Tags:
+      <input type="text" id="tags" required>
+    </label>
+    <label>
+      Relevancy Score:
+      <input type="number" id="relevancy_score" required>
+    </label>
+    <label>
+      Urgency Score:
+      <input type="number" id="urgency_score" required>
+    </label>
+    <label>
+      Total Score:
+      <input type="number" id="total_score" required>
+    </label>
+    <label>
+      Input Cost:
+      <input type="number" step="0.0001" id="input_cost" required>
+    </label>
+    <label>
+      Output Cost:
+      <input type="number" step="0.0001" id="output_cost" required>
+    </label>
+    <label>
+      Total Cost:
+      <input type="number" step="0.0001" id="total_cost" required>
+    </label>
+    <label>
+      Model:
+      <input type="text" id="model" required>
     </label>
     <button type="submit">Add</button>
   </form>
   <div id="responseMessage"></div>
 
-  <h2>articles List</h2>
+  <h2>Articles List</h2>
 
   <div id="paginationControls" aria-label="Pagination controls">
     <button id="prevPage" disabled>Previous</button>
@@ -44,7 +80,19 @@
 
   <table id="articlesTable" aria-label="articles list table">
     <thead>
-      <tr><th>ID</th><th>articles Name</th><th>Email</th><th>Full Name</th><th>Create Date</th><th>Update Date</th></tr>
+      <tr>
+        <th>ID</th>
+        <th>Title</th>
+        <th>Link</th>
+        <th>Tags</th>
+        <th>Relevancy</th>
+        <th>Urgency</th>
+        <th>Total Score</th>
+        <th>Total Cost</th>
+        <th>Model</th>
+        <th>Create Date</th>
+        <th>Update Date</th>
+      </tr>
     </thead>
     <tbody></tbody>
   </table>
@@ -60,7 +108,6 @@
 
     let currentPage = 1;
 
-    // Always read pageSize dynamically before load_articles
     function getPageSize() {
       return Number(pageSizeSelect.value);
     }
@@ -73,30 +120,32 @@
 
       try {
         const res = await fetch(`${apiBase}?page=${page}&limit=${pageSize}`);
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        const data = await res.json();
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
 
+        const data = await res.json();
         tbody.innerHTML = '';
 
         if (data.length === 0 && page > 1) {
-          // No data on requested page - go back one page and reload
           currentPage = page - 1;
           updatePaginationButtons();
           load_articles(currentPage);
           return;
         }
 
-        data.forEach(articles => {
+        data.forEach(article => {
           tbody.innerHTML += `
             <tr>
-              <td>${articles.id}</td>
-              <td>${articles.username}</td>
-              <td>${articles.email}</td>
-              <td>${articles.full_name ?? ''}</td>
-              <td>${articles.create_date ? new Date(articles.create_date).toLocaleString() : ''}</td>
-              <td>${articles.update_date ? new Date(articles.update_date).toLocaleString() : ''}</td>
+              <td>${article.id}</td>
+              <td>${article.title}</td>
+              <td><a href="${article.link}" target="_blank">${article.link}</a></td>
+              <td>${article.tags}</td>
+              <td>${article.relevancy_score}</td>
+              <td>${article.urgency_score}</td>
+              <td>${article.total_score}</td>
+              <td>${article.total_cost}</td>
+              <td>${article.model}</td>
+              <td>${article.create_date ? new Date(article.create_date).toLocaleString() : ''}</td>
+              <td>${article.update_date ? new Date(article.update_date).toLocaleString() : ''}</td>
             </tr>
           `;
         });
@@ -104,7 +153,6 @@
         currentPage = page;
         currentPageSpan.textContent = currentPage;
         updatePaginationButtons();
-
       } catch (err) {
         responseMessage.textContent = 'Failed to load articles: ' + err.message;
         responseMessage.classList.add('error');
@@ -113,23 +161,18 @@
 
     function updatePaginationButtons() {
       prevPageBtn.disabled = currentPage <= 1;
-      // Next button is always enabled as before
     }
 
-    // Prev button handler
     prevPageBtn.addEventListener('click', () => {
-      if (currentPage > 1) {
-        load_articles(currentPage - 1);
-      }
+      if (currentPage > 1) load_articles(currentPage - 1);
     });
 
-    // Next button handler
     nextPageBtn.addEventListener('click', () => {
       load_articles(currentPage + 1);
     });
 
     pageSizeSelect.addEventListener('change', () => {
-      currentPage = 1;  // reset to first page on page size change
+      currentPage = 1;
       load_articles(currentPage);
     });
 
@@ -138,29 +181,35 @@
       responseMessage.textContent = '';
       responseMessage.className = '';
 
-      const username = document.getElementById('username').value.trim();
-      const full_name = document.getElementById('full_name').value.trim();
-      const email = document.getElementById('email').value.trim();
+      const article = {
+        title: document.getElementById('title').value.trim(),
+        link: document.getElementById('link').value.trim(),
+        summary: document.getElementById('summary').value.trim(),
+        reasons: document.getElementById('reasons').value.trim(),
+        tags: document.getElementById('tags').value.trim(),
+        relevancy_score: Number(document.getElementById('relevancy_score').value),
+        urgency_score: Number(document.getElementById('urgency_score').value),
+        total_score: Number(document.getElementById('total_score').value),
+        input_cost: Number(document.getElementById('input_cost').value),
+        output_cost: Number(document.getElementById('output_cost').value),
+        total_cost: Number(document.getElementById('total_cost').value),
+        model: document.getElementById('model').value.trim()
+      };
 
       fetch(apiBase, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, full_name, email })
+        body: JSON.stringify(article)
       })
       .then(async res => {
         const contentType = res.headers.get('content-type') || '';
-        let data;
-        if (contentType.includes('application/json')) {
-          data = await res.json();
-        } else {
-          data = await res.text();
-        }
+        let data = contentType.includes('application/json') ? await res.json() : await res.text();
 
         if (res.status >= 400) {
           responseMessage.textContent = `Error ${res.status}: ` + (typeof data === 'string' ? data : JSON.stringify(data));
           responseMessage.classList.add('error');
         } else {
-          responseMessage.textContent = `Success ${res.status}: articles added.`;
+          responseMessage.textContent = `Success ${res.status}: Article added.`;
           responseMessage.classList.add('success');
           document.getElementById('articlesForm').reset();
           load_articles(currentPage);
@@ -172,7 +221,6 @@
       });
     });
 
-    // Initial load
     load_articles(currentPage);
   </script>
 </body>
