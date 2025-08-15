@@ -1,0 +1,148 @@
+    /* Blue color palette */
+    :root {
+      --blue-dark: #003366;
+      --blue-medium: #005b99;
+      --blue-light: #4da6ff;
+      --blue-lighter: #cce6ff;
+      --gray-light: #f7f9fc;
+      --gray-medium: #a3aebf;
+      --error-red: #d9534f;
+      --success-green: #4cae4c;
+      --font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      font-family: var(--font-family);
+      margin: 20px auto;
+      max-width: 900px;
+      background: var(--gray-light);
+      color: var(--blue-dark);
+    }
+
+    h1, h2 {
+      color: var(--blue-dark);
+      border-bottom: 2px solid var(--blue-medium);
+      padding-bottom: 4px;
+      margin-bottom: 12px;
+    }
+
+    form#userForm {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    form#userForm label {
+      display: flex;
+      flex-direction: column;
+      font-weight: 600;
+      font-size: 0.9rem;
+      min-width: 150px;
+    }
+
+    form#userForm input {
+      padding: 6px 8px;
+      border: 1px solid var(--blue-medium);
+      border-radius: 4px;
+      font-size: 1rem;
+      transition: border-color 0.3s;
+    }
+    form#userForm input:focus {
+      border-color: var(--blue-light);
+      outline: none;
+      box-shadow: 0 0 5px var(--blue-light);
+    }
+
+    form#userForm button {
+      background-color: var(--blue-medium);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      padding: 8px 16px;
+      cursor: pointer;
+      align-self: flex-end;
+      transition: background-color 0.3s;
+    }
+    form#userForm button:hover {
+      background-color: var(--blue-dark);
+    }
+
+    #responseMessage {
+      margin-top: 10px;
+      font-weight: 600;
+      min-height: 1.2em;
+    }
+    #responseMessage.error {
+      color: var(--error-red);
+    }
+    #responseMessage.success {
+      color: var(--success-green);
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      background: white;
+      border: 1px solid var(--blue-medium);
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      margin-bottom: 12px;
+    }
+    th, td {
+      border: 1px solid var(--blue-lighter);
+      padding: 10px 12px;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+    thead {
+      background-color: var(--blue-medium);
+      color: white;
+      font-weight: 700;
+    }
+    tbody tr:hover {
+      background-color: var(--blue-lighter);
+    }
+
+    #paginationControls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    #paginationControls button {
+      background-color: var(--blue-medium);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    #paginationControls button:disabled {
+      background-color: var(--gray-medium);
+      cursor: not-allowed;
+    }
+    #paginationControls button:hover:not(:disabled) {
+      background-color: var(--blue-dark);
+    }
+
+    #pageSizeSelect {
+      font-size: 1rem;
+      padding: 5px 10px;
+      border-radius: 4px;
+      border: 1px solid var(--blue-medium);
+      background: white;
+      color: var(--blue-dark);
+      cursor: pointer;
+      transition: border-color 0.3s;
+    }
+    #pageSizeSelect:hover, #pageSizeSelect:focus {
+      border-color: var(--blue-light);
+      outline: none;
+      box-shadow: 0 0 5px var(--blue-light);
+    }

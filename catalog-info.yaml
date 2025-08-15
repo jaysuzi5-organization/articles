@@ -1,0 +1,12 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: articles
+  description: Python api that displays the time
+  annotations:
+    github.com/project-slug: jaysuzi5-organization/articles
+    backstage.io/techdocs-ref: dir:.
+spec:
+  type: service
+  owner: development
+  lifecycle: experimental

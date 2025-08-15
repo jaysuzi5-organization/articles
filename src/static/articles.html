@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>articles Test Page</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h1>articles Management</h1>
+
+  <h2>Add articles</h2>
+  <form id="articlesForm" autocomplete="off">
+    <label>
+      User Name:
+      <input type="text" id="username" required>
+    </label>
+    <label>
+      Full Name:
+      <input type="text" id="full_name" required>
+    </label>
+    <label>
+      Email:
+      <input type="email" id="email" required>
+    </label>
+    <button type="submit">Add</button>
+  </form>
+  <div id="responseMessage"></div>
+
+  <h2>articles List</h2>
+
+  <div id="paginationControls" aria-label="Pagination controls">
+    <button id="prevPage" disabled>Previous</button>
+    <span>Page <span id="currentPage">1</span></span>
+    <button id="nextPage">Next</button>
+    <label for="pageSizeSelect" style="margin-left: auto; font-weight:600; font-size:0.9rem; color: var(--blue-dark);">
+      Items per page:
+    </label>
+    <select id="pageSizeSelect" aria-label="Select number of items per page">
+      <option value="5">5</option>
+      <option value="10" selected>10</option>
+      <option value="20">20</option>
+      <option value="50">50</option>
+    </select>
+  </div>
+
+  <table id="articlesTable" aria-label="articles list table">
+    <thead>
+      <tr><th>ID</th><th>articles Name</th><th>Email</th><th>Full Name</th><th>Create Date</th><th>Update Date</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const apiBase = '/api/v1/articles';
+    const responseMessage = document.getElementById('responseMessage');
+    const tbody = document.querySelector('#articlesTable tbody');
+    const currentPageSpan = document.getElementById('currentPage');
+    const prevPageBtn = document.getElementById('prevPage');
+    const nextPageBtn = document.getElementById('nextPage');
+    const pageSizeSelect = document.getElementById('pageSizeSelect');
+
+    let currentPage = 1;
+
+    // Always read pageSize dynamically before load_articles
+    function getPageSize() {
+      return Number(pageSizeSelect.value);
+    }
+
+    async function load_articles(page = 1) {
+      responseMessage.textContent = '';
+      responseMessage.className = '';
+
+      const pageSize = getPageSize();
+
+      try {
+        const res = await fetch(`${apiBase}?page=${page}&limit=${pageSize}`);
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        const data = await res.json();
+
+        tbody.innerHTML = '';
+
+        if (data.length === 0 && page > 1) {
+          // No data on requested page - go back one page and reload
+          currentPage = page - 1;
+          updatePaginationButtons();
+          load_articles(currentPage);
+          return;
+        }
+
+        data.forEach(articles => {
+          tbody.innerHTML += `
+            <tr>
+              <td>${articles.id}</td>
+              <td>${articles.username}</td>
+              <td>${articles.email}</td>
+              <td>${articles.full_name ?? ''}</td>
+              <td>${articles.create_date ? new Date(articles.create_date).toLocaleString() : ''}</td>
+              <td>${articles.update_date ? new Date(articles.update_date).toLocaleString() : ''}</td>
+            </tr>
+          `;
+        });
+
+        currentPage = page;
+        currentPageSpan.textContent = currentPage;
+        updatePaginationButtons();
+
+      } catch (err) {
+        responseMessage.textContent = 'Failed to load articles: ' + err.message;
+        responseMessage.classList.add('error');
+      }
+    }
+
+    function updatePaginationButtons() {
+      prevPageBtn.disabled = currentPage <= 1;
+      // Next button is always enabled as before
+    }
+
+    // Prev button handler
+    prevPageBtn.addEventListener('click', () => {
+      if (currentPage > 1) {
+        load_articles(currentPage - 1);
+      }
+    });
+
+    // Next button handler
+    nextPageBtn.addEventListener('click', () => {
+      load_articles(currentPage + 1);
+    });
+
+    pageSizeSelect.addEventListener('change', () => {
+      currentPage = 1;  // reset to first page on page size change
+      load_articles(currentPage);
+    });
+
+    document.getElementById('articlesForm').addEventListener('submit', e => {
+      e.preventDefault();
+      responseMessage.textContent = '';
+      responseMessage.className = '';
+
+      const username = document.getElementById('username').value.trim();
+      const full_name = document.getElementById('full_name').value.trim();
+      const email = document.getElementById('email').value.trim();
+
+      fetch(apiBase, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, full_name, email })
+      })
+      .then(async res => {
+        const contentType = res.headers.get('content-type') || '';
+        let data;
+        if (contentType.includes('application/json')) {
+          data = await res.json();
+        } else {
+          data = await res.text();
+        }
+
+        if (res.status >= 400) {
+          responseMessage.textContent = `Error ${res.status}: ` + (typeof data === 'string' ? data : JSON.stringify(data));
+          responseMessage.classList.add('error');
+        } else {
+          responseMessage.textContent = `Success ${res.status}: articles added.`;
+          responseMessage.classList.add('success');
+          document.getElementById('articlesForm').reset();
+          load_articles(currentPage);
+        }
+      })
+      .catch(err => {
+        responseMessage.textContent = 'Network or server error: ' + err.message;
+        responseMessage.classList.add('error');
+      });
+    });
+
+    // Initial load
+    load_articles(currentPage);
+  </script>
+</body>
+</html>

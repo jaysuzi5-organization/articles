@@ -1,0 +1,11 @@
+site_name: 'articles'
+site_description: 'Main documentation for articles'
+repo_url: https://github.com/jaysuzi5/articles
+edit_uri: edit/main/docs
+
+plugins:
+  - techdocs-core
+
+nav:
+  - Overview:
+      - Getting started: 'docs/index.md'

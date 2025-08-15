@@ -1,0 +1,222 @@
+name: ci
+
+on:
+  push:
+    paths:
+      - src/**
+      - charts/articles/**
+    branches:
+      - main
+
+jobs:
+
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      only_charts: ${{ steps.check.outputs.only_charts }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # need full history for git diff
+      - id: check
+        run: |
+          # Default false
+          only_charts=false
+
+          # Detect changed files based on event type
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            if [ "$(git rev-list --count HEAD)" -eq 1 ]; then
+              # Initial commit: diff against empty tree
+              changed=$(git diff --name-only $(git hash-object -t tree /dev/null) HEAD)
+            else
+              # Normal push: diff against previous commit
+              changed=$(git diff --name-only HEAD^ HEAD)
+            fi
+          elif [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            # Compare against PR base branch
+            git fetch origin "${GITHUB_BASE_REF}"
+            changed=$(git diff --name-only "origin/${GITHUB_BASE_REF}" HEAD)
+          else
+            echo "Unsupported event type: $GITHUB_EVENT_NAME"
+            exit 1
+          fi
+
+          echo "Changed files:"
+          echo "$changed"
+
+          # Check if ALL changed files are under charts/articles
+          if [ -n "$changed" ] && echo "$changed" | grep -qv '^charts/articles/'; then
+            echo "Detected changes outside charts/articles/"
+          else
+            only_charts=true
+          fi
+
+          # Write output for later jobs
+          echo "only_charts=$only_charts" >> $GITHUB_OUTPUT
+          echo "Only charts changed? $only_charts"
+
+  ci:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.only_charts == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3    
+      # - name: Install dependencies
+      #   run: |
+      #     pip install -r requirements.txt
+      #     pip install pytest==8.4.1 pytest-cov==6.2.1 pytest-mock==3.14.1 asynctest==0.13.0 dotenv==0.9.9 pytest-asyncio==1.1.0 python-multipart==0.0.20
+      # - name: Run Unit Tests and Generate Report
+      #   env:
+      #     POSTGRES_USER: postgres
+      #     POSTGRES_PASSWORD: password
+      #     POSTGRES_HOST: localhost
+      #     POSTGRES_PORT: 5432
+      #     POSTGRES_DB: mydb      
+      #   run: |
+      #     export PYTHONPATH=./src
+      #     pytest tests/unit \
+      #       --cov=src \
+      #       --cov-report=xml:coverage.xml \
+      #       --cov-report=html:coverage_html \
+      #       --cov-report=term-missing \
+      #       --cov-fail-under=70 \
+      #       --junitxml=results.xml
+      # - name: Upload reports
+      #   if: always()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: test-reports
+      #     path: |
+      #       results.xml
+      #       coverage.xml
+      #       coverage_html/**          
+      # - name: Install xmllint
+      #   run: sudo apt-get install -y libxml2-utils       
+      # - name: Fail if <95% test cases passed
+      #   run: |
+      #     total=$(xmllint --xpath 'string(count(//testcase))' results.xml)
+      #     failed=$(xmllint --xpath 'string(count(//testcase[failure]))' results.xml)
+      #     passed=$((total - failed))
+      #     percent=$((100 * passed / total))
+      #     echo "Total: $total, Passed: $passed, Failed: $failed, Percent Passed: $percent%"
+      #     if [ "$percent" -lt 95 ]; then
+      #       echo "❌ Test pass rate is below 95% ($percent%)"
+      #       exit 1
+      #     fi
+      #   shell: bash
+      - name: Add COMMIT_ID env property with commit short sha
+        run: echo "COMMIT_ID=${GITHUB_SHA::6}" >> $GITHUB_ENV
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: jaysuzi5/articles:${{ env.COMMIT_ID }}
+    outputs:
+      commit_id: ${{ env.COMMIT_ID }}
+
+  cd:
+    needs: [detect-changes, ci]
+    if: needs.detect-changes.outputs.only_charts == 'false'
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+      - name: Modify values file
+        shell: bash
+        run: |
+          echo ${{ needs.ci.outputs.commit_id }}  
+          pip install yq
+          yq -Yi '.image.tag = "${{ needs.ci.outputs.commit_id }}"' charts/articles/values-dev.yaml
+      - name: Commit changes
+        uses: EndBug/add-and-commit@v9
+        with:
+          message: 'Updates values.yaml with commit id ${{ needs.ci.outputs.commit_id }}'
+      - name: Install argocd
+        shell: bash
+        run: |
+          curl -ksSl -o argocd https://argocd-server.argocd/download/argocd-linux-amd64
+          chmod +x argocd
+          sudo mv ./argocd /usr/local/bin/argocd
+      - name: Argocd app sync
+        shell: bash
+        run: |
+          # Login to argocd
+          argocd login argocd-server.argocd \
+            --insecure \
+            --grpc-web \
+            --username admin \
+            --password ${{ secrets.ARGOCD_PASSWORD }}
+
+          # Add repo if not already added
+          if ! argocd repo list | grep -q 'https://github.com/jaysuzi5-organization/articles'; then
+            argocd repo add 'https://github.com/jaysuzi5-organization/articles.git'
+          fi
+
+          # Create the app only if it doesn't exist
+          if ! argocd app get articles >/dev/null 2>&1; then
+            argocd app create articles \
+              --repo https://github.com/jaysuzi5-organization/articles.git \
+              --path charts/articles \
+              --dest-namespace dev \
+              --dest-server https://kubernetes.default.svc \
+              --values values-dev.yaml \
+              --revision main \
+              --sync-policy manual \
+              --sync-option CreateNamespace=true
+          else
+            echo "App articles already exists."
+          fi
+
+          # Syncs the argocd app
+          argocd app sync articles
+          argocd app wait articles --timeout 180
+
+  cd-charts-only:
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.only_charts == 'true'
+    runs-on: self-hosted
+    steps:
+      - name: Install argocd
+        shell: bash
+        run: |
+          curl -ksSl -o argocd https://argocd-server.argocd/download/argocd-linux-amd64
+          chmod +x argocd
+          sudo mv ./argocd /usr/local/bin/argocd
+      - name: Argocd app sync
+        shell: bash
+        run: |
+          # Login to argocd
+          argocd login argocd-server.argocd \
+            --insecure \
+            --grpc-web \
+            --username admin \
+            --password ${{ secrets.ARGOCD_PASSWORD }}
+
+          # Add repo if not already added
+          if ! argocd repo list | grep -q 'https://github.com/jaysuzi5-organization/articles'; then
+            argocd repo add 'https://github.com/jaysuzi5-organization/articles.git'
+          fi
+
+          # Create the app only if it doesn't exist
+          if ! argocd app get articles >/dev/null 2>&1; then
+            argocd app create articles \
+              --repo https://github.com/jaysuzi5-organization/articles.git \
+              --path charts/articles \
+              --dest-namespace dev \
+              --dest-server https://kubernetes.default.svc \
+              --values values-dev.yaml \
+              --revision main \
+              --sync-policy manual \
+              --sync-option CreateNamespace=true
+          else
+            echo "App articles already exists."
+          fi
+
+          # Syncs the argocd app
+          argocd app sync articles
+          argocd app wait articles --timeout 180

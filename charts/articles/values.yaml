@@ -1,0 +1,83 @@
+replicaCount: 1
+image:
+  repository: jaysuzi5/articles
+  pullPolicy: Always
+  tag: articles-dev-latest
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+serviceAccount:
+  create: false
+  automount: true
+  annotations: {}
+  name: ""
+podAnnotations: {}
+podLabels: {}
+podSecurityContext: {}
+securityContext: {}
+service:
+  type: ClusterIP
+  port: 5001
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations: {}
+  hosts:
+    - host: home.dev.com
+      paths:
+        - path: /api/v1/articles
+          pathType: Prefix
+        - path: /articles/test
+          pathType: Prefix          
+  tls: []
+resources: {}
+livenessProbe:
+  httpGet:
+    path: /api/v1/articles/health
+    port: 5001
+  initialDelaySeconds: 30
+  periodSeconds: 60
+  timeoutSeconds: 3 
+  failureThreshold: 3
+readinessProbe:
+  httpGet:
+    path: /api/v1/articles/health
+    port: 5001
+  initialDelaySeconds: 5
+  periodSeconds: 30
+  timeoutSeconds: 3 
+  failureThreshold: 3
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+volumes: []
+volumeMounts: []
+nodeSelector: {}
+tolerations: []
+affinity: {}
+environmentVariables:
+  - name: OTEL_EXPORTER_OTLP_ENDPOINT
+    value: "http://otel-collector-collector.monitoring.svc.cluster.local:4317"
+  - name: OTEL_SERVICE_NAME
+    value: "articles"
+  - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
+    value: "true"
+  - name: POSTGRES_HOST
+    value: "192.168.86.200"
+  - name: POSTGRES_PORT
+    value: "30000"
+  - name: POSTGRES_DB
+    value: "homelab"        
+# Secrets must be preregistered in either dev-secrets or prod-secrets
+# See homelab setup for the files    
+secretEnvironmentVariables:
+  - name: POSTGRES_PASSWORD
+    secretKeyRef:
+      name: dev-secrets
+      key: POSTGRES_PASSWORD_HOMELAB
+  - name: POSTGRES_USER
+    secretKeyRef:
+      name: dev-secrets
+      key: POSTGRES_USER_HOMELAB      
