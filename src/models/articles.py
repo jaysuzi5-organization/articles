@@ -97,7 +97,7 @@ class ArticlesCreate(BaseModel):
         {
             "title": "AI Breakthrough in NLP",
             "link": "https://example.com/ai-breakthrough",
-            "summary": "Researchers achieved a new benchmark in NLP tasks...",
+            "summary": "Researchers achieved a new benchmark in NLP tasks..",
             "reasons": "Highly relevant to AI research trends",
             "tags": "AI,NLP,Research",
             "relevancy_score": 9,
