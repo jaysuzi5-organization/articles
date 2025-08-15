@@ -14,7 +14,7 @@
     body {
       font-family: var(--font-family);
       margin: 20px auto;
-      max-width: 900px;
+      max-width: 1800px;
       background: var(--gray-light);
       color: var(--blue-dark);
     }

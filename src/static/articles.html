@@ -38,8 +38,8 @@
       <input type="number" id="urgency_score" required>
     </label>
     <label>
-      Total Score:
-      <input type="number" id="total_score" required>
+      Overall Score:
+      <input type="number" id="overall_score" required>
     </label>
     <label>
       Input Cost:
@@ -83,6 +83,7 @@
       <tr>
         <th>ID</th>
         <th>Title</th>
+        <th>Summary</th>
         <th>Link</th>
         <th>Tags</th>
         <th>Relevancy</th>
@@ -137,11 +138,12 @@
             <tr>
               <td>${article.id}</td>
               <td>${article.title}</td>
+              <td>${article.summary}</td>
               <td><a href="${article.link}" target="_blank">${article.link}</a></td>
               <td>${article.tags}</td>
               <td>${article.relevancy_score}</td>
               <td>${article.urgency_score}</td>
-              <td>${article.total_score}</td>
+              <td>${article.overall_score}</td>
               <td>${article.total_cost}</td>
               <td>${article.model}</td>
               <td>${article.create_date ? new Date(article.create_date).toLocaleString() : ''}</td>
@@ -189,7 +191,7 @@
         tags: document.getElementById('tags').value.trim(),
         relevancy_score: Number(document.getElementById('relevancy_score').value),
         urgency_score: Number(document.getElementById('urgency_score').value),
-        total_score: Number(document.getElementById('total_score').value),
+        overall_score: Number(document.getElementById('overall_score').value),
         input_cost: Number(document.getElementById('input_cost').value),
         output_cost: Number(document.getElementById('output_cost').value),
         total_cost: Number(document.getElementById('total_cost').value),
