@@ -12,6 +12,7 @@ from sqlalchemy import Column, DateTime, Integer, String, Text, Float
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from datetime import datetime, UTC
 from pydantic import BaseModel
+from typing import Optional
 
 class Base(DeclarativeBase):
     pass
@@ -121,3 +122,40 @@ class ArticlesCreate(BaseModel):
     output_cost: float
     total_cost: float
     model: str
+
+
+class ArticlesSearch(BaseModel):
+    """
+    Pydantic schema for searching for.
+
+    Attributes:
+        title (str): Title of the article.
+        link (str): URL link to the article.
+        summary (str): Summary text of the article.
+        reasons (str): Explanation for selecting or scoring the article.
+        tags (str): Comma-separated tags or keywords.
+        relevancy_score (int): Relevancy score for the article.
+        urgency_score (int): Urgency score for the article.
+        overall_score (int): Overall score for ranking purposes.
+        input_cost (float): Processing cost for input.
+        output_cost (float): Processing cost for output.
+        total_cost (float): Combined cost for processing.
+        model (str): AI model name or identifier.
+
+    Example:
+        {
+            "tags": "API"
+        }
+    """
+    title: Optional[str] = None
+    link: Optional[str] = None
+    summary: Optional[str] = None
+    reasons: Optional[str] = None
+    tags: Optional[str] = None
+    relevancy_score: Optional[int] = None
+    urgency_score: Optional[int] = None
+    overall_score: Optional[int] = None
+    input_cost: Optional[float] = None
+    output_cost: Optional[float] = None
+    total_cost: Optional[float] = None
+    model: Optional[str] = None

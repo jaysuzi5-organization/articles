@@ -1,5 +1,5 @@
 from framework.db import get_db
-from models.articles import Articles, ArticlesCreate
+from models.articles import Articles, ArticlesCreate, ArticlesSearch
 from fastapi import APIRouter, Depends, HTTPException, Body, Query
 from sqlalchemy import or_, and_
 from sqlalchemy.orm import Session
@@ -241,7 +241,7 @@ def delete_articles(article_id: int, db: Session = Depends(get_db)):
 
 @router.post("/api/v1/articles/search")
 def search_articles(
-    search_data: ArticlesCreate = Body(..., description="Search criteria"),
+    search_data: ArticlesSearch = Body(..., description="Search criteria"),
     db: Session = Depends(get_db)
 ):
     """
@@ -266,10 +266,7 @@ def search_articles(
 
                 # Special handling for tags or list-like fields (assuming stored as comma-separated string or array)
                 if field == "tags":
-                    # If using PostgreSQL ARRAY type:
                     or_conditions.append(column.any(value))
-                    # If using comma-separated string, replace above line with:
-                    # or_conditions.append(column.ilike(f"%{value}%"))
                 else:
                     or_conditions.append(column == value)
 
