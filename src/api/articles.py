@@ -259,7 +259,6 @@ def search_articles(
             filters.append(Articles.create_date >= last_24h)
 
         # Build OR conditions for matching any field
-        or_conditions = []
         for field, value in data.items():
             if hasattr(Articles, field):
                 column = getattr(Articles, field)
