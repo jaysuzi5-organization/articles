@@ -31,7 +31,6 @@ class Articles(Base):
         relevancy_score (int): Numeric score indicating how relevant the article is.
         urgency_score (int): Numeric score indicating urgency level of the article.
         overall_score (int): Calculated combined score for the article.
-        total_score (int): Overall combined scoring.
         input_cost (float): Cost (e.g., API cost) for processing the article input.
         output_cost (float): Cost for generating the article output.
         total_cost (float): Combined cost of input and output.
@@ -55,7 +54,6 @@ class Articles(Base):
     relevancy_score = Column(Integer, nullable=False)
     urgency_score = Column(Integer, nullable=False)
     overall_score = Column(Integer, nullable=False)
-    total_score = Column(Integer, nullable=False)
     input_cost = Column(Float, nullable=False)
     output_cost = Column(Float, nullable=False)
     total_cost = Column(Float, nullable=False)
@@ -89,7 +87,7 @@ class ArticlesCreate(BaseModel):
         tags (str): Comma-separated tags or keywords.
         relevancy_score (int): Relevancy score for the article.
         urgency_score (int): Urgency score for the article.
-        total_score (int): Overall score for ranking purposes.
+        overall_score (int): Overall score for ranking purposes.
         input_cost (float): Processing cost for input.
         output_cost (float): Processing cost for output.
         total_cost (float): Combined cost for processing.
@@ -104,7 +102,7 @@ class ArticlesCreate(BaseModel):
             "tags": "AI,NLP,Research",
             "relevancy_score": 9,
             "urgency_score": 8,
-            "total_score": 8,
+            "overall_score": 8,
             "input_cost": 0.005,
             "output_cost": 0.012,
             "total_cost": 0.017,
@@ -118,7 +116,7 @@ class ArticlesCreate(BaseModel):
     tags: str
     relevancy_score: int
     urgency_score: int
-    total_score: int
+    overall_score: int
     input_cost: float
     output_cost: float
     total_cost: float
