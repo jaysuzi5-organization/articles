@@ -81,7 +81,7 @@
   <table id="articlesTable" aria-label="articles list table">
     <thead>
       <tr>
-        <th>ID</th>
+        <th>Article ID</th>
         <th>Title</th>
         <th>Summary</th>
         <th>Link</th>
@@ -136,7 +136,7 @@
         data.forEach(article => {
           tbody.innerHTML += `
             <tr>
-              <td>${article.id}</td>
+              <td>${article.article_id}</td>
               <td>${article.title}</td>
               <td>${article.summary}</td>
               <td><a href="${article.link}" target="_blank">${article.link}</a></td>

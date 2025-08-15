@@ -1,10 +1,9 @@
 from framework.db import get_db
 from models.articles import Articles, ArticlesCreate, ArticlesSearch
 from fastapi import APIRouter, Depends, HTTPException, Body, Query
-from sqlalchemy import or_, and_
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, UTC
-
 
 router = APIRouter()
 
@@ -50,26 +49,41 @@ def get_articles_by_id(article_id: int, db: Session = Depends(get_db)):
 def list_articles(
     page: int = Query(1, ge=1, description="Page number to retrieve"),
     limit: int = Query(10, ge=1, le=100, description="Number of records per page"),
+    days_back: int | None = Query(None, ge=0, description="Optional number of days back to filter articles"),
     db: Session = Depends(get_db)
 ):
     """
-    Retrieve a paginated list of articles records.
+    Retrieve a paginated list of articles records, optionally filtered by how many days back.
+    Results are sorted descending by create_date.
 
     Args:
         page (int): Page number starting from 1.
         limit (int): Maximum number of records to return per page.
+        days_back (int | None): Optional number of days back to filter articles.
         db (Session): SQLAlchemy database session.
 
     Returns:
         list[dict]: A list of serialized articles records.
     """
     try:
+        query = db.query(Articles)
+
+        # Apply days_back filter if provided
+        if days_back is not None:
+            cutoff = datetime.now(UTC) - timedelta(days=days_back)
+            query = query.filter(Articles.create_date >= cutoff)
+
+        # Sort descending by create_date
+        query = query.order_by(Articles.create_date.desc())
+
+        # Pagination
         offset = (page - 1) * limit
-        articles_records = db.query(Articles).offset(offset).limit(limit).all()
+        articles_records = query.offset(offset).limit(limit).all()
+
         return [serialize_sqlalchemy_obj(item) for item in articles_records]
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
-
 
 @router.post("/api/v1/articles")
 def create_record(
