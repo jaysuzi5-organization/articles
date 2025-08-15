@@ -266,12 +266,9 @@ def search_articles(
 
                 # Special handling for tags or list-like fields (assuming stored as comma-separated string or array)
                 if field == "tags":
-                    or_conditions.append(column.ilike(f"%{value}%"))
+                    filters.append(column.ilike(f"%{value}%"))  # tags substring match
                 else:
-                    or_conditions.append(column == value)
-
-        if or_conditions:
-            filters.append(or_(*or_conditions))
+                    filters.append(column == value)
 
         query = db.query(Articles).filter(and_(*filters))
         results = query.all()
