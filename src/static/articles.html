@@ -158,19 +158,22 @@
         load_articles(currentPage);
         return;
       }
-
       data.forEach(article => {
+        const isHot = article.overall_score >= 8;
         tbody.innerHTML += `
           <tr>
             <td>${article.article_id}</td>
-            <td>${article.title}</td>
-            <td>${article.summary}</td>
+            <td class="title-col">${article.title}</td>
+            <td class="summary-col">${article.summary}</td>
             <td><a href="${article.link}" target="_blank">${article.link}</a></td>
             <td>${article.tags}</td>
             <td>${article.relevancy_score}</td>
             <td>${article.urgency_score}</td>
-            <td>${article.overall_score}</td>
-            <td>${article.total_cost}</td>
+            <td>
+              ${article.overall_score}
+              ${isHot ? '<span class="hot-icon" title="Hot">🔥</span>' : ''}
+            </td>
+            <td>${Number(article.total_cost).toFixed(4)}</td>
             <td>${article.model}</td>
             <td>${article.create_date ? new Date(article.create_date).toLocaleString() : ''}</td>
             <td>${article.update_date ? new Date(article.update_date).toLocaleString() : ''}</td>
