@@ -57,6 +57,10 @@
       Model:
       <input type="text" id="model" required>
     </label>
+    <label>
+      Feed URL:
+      <input type="text" id="feed_url" required>
+    </label>
     <button type="submit">Add</button>
   </form>
   <div id="responseMessage"></div>
@@ -99,6 +103,7 @@
         <th>Total Score</th>
         <th>Total Cost</th>
         <th>Model</th>
+        <th>Feed URL</th>
         <th>Create Date</th>
         <th>Update Date</th>
       </tr>
@@ -173,6 +178,7 @@
             </td>
             <td>${Number(article.total_cost).toFixed(4)}</td>
             <td>${article.model}</td>
+            <td>${article.feed_url}</td>
             <td>${article.create_date ? new Date(article.create_date).toLocaleString() : ''}</td>
             <td>${article.update_date ? new Date(article.update_date).toLocaleString() : ''}</td>
           </tr>
@@ -213,7 +219,7 @@
       const columnMap = [
         'article_id', 'title', 'summary', 'tags',
         'relevancy_score', 'urgency_score', 'overall_score',
-        'total_cost', 'model', 'create_date', 'update_date'
+        'total_cost', 'model', 'feed_url', 'create_date', 'update_date'
       ];
 
       const clickedColumn = columnMap[index];
@@ -246,7 +252,8 @@
       input_cost: Number(document.getElementById('input_cost').value),
       output_cost: Number(document.getElementById('output_cost').value),
       total_cost: Number(document.getElementById('total_cost').value),
-      model: document.getElementById('model').value.trim()
+      model: document.getElementById('model').value.trim(),
+      feed_url: document.getElementById('feed_url').value.trim()
     };
 
     fetch(apiBase, {

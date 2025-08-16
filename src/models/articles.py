@@ -35,6 +35,7 @@ class Articles(Base):
         input_cost (float): Cost (e.g., API cost) for processing the article input.
         output_cost (float): Cost for generating the article output.
         total_cost (float): Combined cost of input and output.
+        feed_url (str): The url of the RSS feed.
         model (str): Name or identifier of the AI model used.
         create_date (datetime): Timestamp when the record was created (UTC).
         update_date (datetime): Timestamp when the record was last updated (UTC).
@@ -58,6 +59,7 @@ class Articles(Base):
     input_cost = Column(Float, nullable=False)
     output_cost = Column(Float, nullable=False)
     total_cost = Column(Float, nullable=False)
+    feed_url = Column(String(256), nullable=False)
     model = Column(String(256), nullable=False)
     create_date = Column(DateTime, default=lambda: datetime.now(UTC))
     update_date = Column(
@@ -92,6 +94,7 @@ class ArticlesCreate(BaseModel):
         input_cost (float): Processing cost for input.
         output_cost (float): Processing cost for output.
         total_cost (float): Combined cost for processing.
+        feed_url (str): The url of the RSS feed.
         model (str): AI model name or identifier.
 
     Example:
@@ -107,6 +110,7 @@ class ArticlesCreate(BaseModel):
             "input_cost": 0.005,
             "output_cost": 0.012,
             "total_cost": 0.017,
+            "feed_url": "https://devops.com/feed/",
             "model": "gpt-4"
         }
     """
@@ -121,6 +125,7 @@ class ArticlesCreate(BaseModel):
     input_cost: float
     output_cost: float
     total_cost: float
+    feed_url: str
     model: str
 
 
@@ -140,6 +145,7 @@ class ArticlesSearch(BaseModel):
         input_cost (float): Processing cost for input.
         output_cost (float): Processing cost for output.
         total_cost (float): Combined cost for processing.
+        feed_url (str): The url of the RSS feed.
         model (str): AI model name or identifier.
 
     Example:
@@ -158,4 +164,5 @@ class ArticlesSearch(BaseModel):
     input_cost: Optional[float] = None
     output_cost: Optional[float] = None
     total_cost: Optional[float] = None
+    feed_url: Optional[str] = None
     model: Optional[str] = None
