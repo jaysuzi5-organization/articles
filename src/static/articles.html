@@ -93,7 +93,6 @@
         <th>Article ID</th>
         <th>Title</th>
         <th>Summary</th>
-        <th>Link</th>
         <th>Tags</th>
         <th>Relevancy</th>
         <th>Urgency</th>
@@ -163,9 +162,8 @@
         tbody.innerHTML += `
           <tr>
             <td>${article.article_id}</td>
-            <td class="title-col">${article.title}</td>
+            <td class="title-col"><a href="${article.link}" target="_blank">${article.title}</a></td>
             <td class="summary-col">${article.summary}</td>
-            <td><a href="${article.link}" target="_blank">${article.link}</a></td>
             <td>${article.tags}</td>
             <td>${article.relevancy_score}</td>
             <td>${article.urgency_score}</td>
@@ -213,7 +211,7 @@
     th.style.cursor = "pointer";
     th.addEventListener('click', () => {
       const columnMap = [
-        'article_id', 'title', 'summary', 'link', 'tags',
+        'article_id', 'title', 'summary', 'tags',
         'relevancy_score', 'urgency_score', 'overall_score',
         'total_cost', 'model', 'create_date', 'update_date'
       ];
@@ -239,7 +237,6 @@
 
     const article = {
       title: document.getElementById('title').value.trim(),
-      link: document.getElementById('link').value.trim(),
       summary: document.getElementById('summary').value.trim(),
       reasons: document.getElementById('reasons').value.trim(),
       tags: document.getElementById('tags').value.trim(),

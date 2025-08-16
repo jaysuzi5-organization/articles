@@ -149,13 +149,13 @@ tbody tr:hover {
 
 /* Make Title and Summary columns wider */
 th:nth-child(2), td.title-col {
-  min-width: 250px;
-  max-width: 350px;
+  min-width: 350px;
+  max-width: 450px;
 }
 
 th:nth-child(3), td.summary-col {
-  min-width: 300px;
-  max-width: 500px;
+  min-width: 400px;
+  max-width: 600px;
   white-space: normal;   /* allow wrapping */
 }
 
