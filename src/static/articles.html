@@ -98,132 +98,161 @@
     <tbody></tbody>
   </table>
 
-  <script>
-    const apiBase = '/api/v1/articles';
-    const responseMessage = document.getElementById('responseMessage');
-    const tbody = document.querySelector('#articlesTable tbody');
-    const currentPageSpan = document.getElementById('currentPage');
-    const prevPageBtn = document.getElementById('prevPage');
-    const nextPageBtn = document.getElementById('nextPage');
-    const pageSizeSelect = document.getElementById('pageSizeSelect');
+<script>
+  const apiBase = '/api/v1/articles';
+  const responseMessage = document.getElementById('responseMessage');
+  const tbody = document.querySelector('#articlesTable tbody');
+  const currentPageSpan = document.getElementById('currentPage');
+  const prevPageBtn = document.getElementById('prevPage');
+  const nextPageBtn = document.getElementById('nextPage');
+  const pageSizeSelect = document.getElementById('pageSizeSelect');
+  const tableHeaders = document.querySelectorAll('#articlesTable thead th');
 
-    let currentPage = 1;
+  let currentPage = 1;
+  let sortBy = 'create_date';   // default sort column
+  let sortOrder = 'desc';       // default order
 
-    function getPageSize() {
-      return Number(pageSizeSelect.value);
-    }
+  function getPageSize() {
+    return Number(pageSizeSelect.value);
+  }
 
-    async function load_articles(page = 1) {
-      responseMessage.textContent = '';
-      responseMessage.className = '';
+  async function load_articles(page = 1) {
+    responseMessage.textContent = '';
+    responseMessage.className = '';
 
-      const pageSize = getPageSize();
+    const pageSize = getPageSize();
 
-      try {
-        const res = await fetch(`${apiBase}?page=${page}&limit=${pageSize}`);
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    try {
+      const res = await fetch(`${apiBase}?page=${page}&limit=${pageSize}&sort_by=${sortBy}&sort_order=${sortOrder}`);
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
 
-        const data = await res.json();
-        tbody.innerHTML = '';
+      const data = await res.json();
+      tbody.innerHTML = '';
 
-        if (data.length === 0 && page > 1) {
-          currentPage = page - 1;
-          updatePaginationButtons();
-          load_articles(currentPage);
-          return;
-        }
-
-        data.forEach(article => {
-          tbody.innerHTML += `
-            <tr>
-              <td>${article.article_id}</td>
-              <td>${article.title}</td>
-              <td>${article.summary}</td>
-              <td><a href="${article.link}" target="_blank">${article.link}</a></td>
-              <td>${article.tags}</td>
-              <td>${article.relevancy_score}</td>
-              <td>${article.urgency_score}</td>
-              <td>${article.overall_score}</td>
-              <td>${article.total_cost}</td>
-              <td>${article.model}</td>
-              <td>${article.create_date ? new Date(article.create_date).toLocaleString() : ''}</td>
-              <td>${article.update_date ? new Date(article.update_date).toLocaleString() : ''}</td>
-            </tr>
-          `;
-        });
-
-        currentPage = page;
-        currentPageSpan.textContent = currentPage;
+      if (data.length === 0 && page > 1) {
+        currentPage = page - 1;
         updatePaginationButtons();
-      } catch (err) {
-        responseMessage.textContent = 'Failed to load articles: ' + err.message;
-        responseMessage.classList.add('error');
+        load_articles(currentPage);
+        return;
       }
+
+      data.forEach(article => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${article.article_id}</td>
+            <td>${article.title}</td>
+            <td>${article.summary}</td>
+            <td><a href="${article.link}" target="_blank">${article.link}</a></td>
+            <td>${article.tags}</td>
+            <td>${article.relevancy_score}</td>
+            <td>${article.urgency_score}</td>
+            <td>${article.overall_score}</td>
+            <td>${article.total_cost}</td>
+            <td>${article.model}</td>
+            <td>${article.create_date ? new Date(article.create_date).toLocaleString() : ''}</td>
+            <td>${article.update_date ? new Date(article.update_date).toLocaleString() : ''}</td>
+          </tr>
+        `;
+      });
+
+      currentPage = page;
+      currentPageSpan.textContent = currentPage;
+      updatePaginationButtons();
+    } catch (err) {
+      responseMessage.textContent = 'Failed to load articles: ' + err.message;
+      responseMessage.classList.add('error');
     }
+  }
 
-    function updatePaginationButtons() {
-      prevPageBtn.disabled = currentPage <= 1;
-    }
+  function updatePaginationButtons() {
+    prevPageBtn.disabled = currentPage <= 1;
+  }
 
-    prevPageBtn.addEventListener('click', () => {
-      if (currentPage > 1) load_articles(currentPage - 1);
-    });
+  // Pagination
+  prevPageBtn.addEventListener('click', () => {
+    if (currentPage > 1) load_articles(currentPage - 1);
+  });
 
-    nextPageBtn.addEventListener('click', () => {
-      load_articles(currentPage + 1);
-    });
+  nextPageBtn.addEventListener('click', () => {
+    load_articles(currentPage + 1);
+  });
 
-    pageSizeSelect.addEventListener('change', () => {
-      currentPage = 1;
+  pageSizeSelect.addEventListener('change', () => {
+    currentPage = 1;
+    load_articles(currentPage);
+  });
+
+  // Sorting
+  tableHeaders.forEach((th, index) => {
+    th.style.cursor = "pointer";
+    th.addEventListener('click', () => {
+      const columnMap = [
+        'article_id', 'title', 'summary', 'link', 'tags',
+        'relevancy_score', 'urgency_score', 'overall_score',
+        'total_cost', 'model', 'create_date', 'update_date'
+      ];
+
+      const clickedColumn = columnMap[index];
+      if (sortBy === clickedColumn) {
+        // toggle order
+        sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortBy = clickedColumn;
+        sortOrder = 'asc';
+      }
+
       load_articles(currentPage);
     });
+  });
 
-    document.getElementById('articlesForm').addEventListener('submit', e => {
-      e.preventDefault();
-      responseMessage.textContent = '';
-      responseMessage.className = '';
+  // Form submission
+  document.getElementById('articlesForm').addEventListener('submit', e => {
+    e.preventDefault();
+    responseMessage.textContent = '';
+    responseMessage.className = '';
 
-      const article = {
-        title: document.getElementById('title').value.trim(),
-        link: document.getElementById('link').value.trim(),
-        summary: document.getElementById('summary').value.trim(),
-        reasons: document.getElementById('reasons').value.trim(),
-        tags: document.getElementById('tags').value.trim(),
-        relevancy_score: Number(document.getElementById('relevancy_score').value),
-        urgency_score: Number(document.getElementById('urgency_score').value),
-        overall_score: Number(document.getElementById('overall_score').value),
-        input_cost: Number(document.getElementById('input_cost').value),
-        output_cost: Number(document.getElementById('output_cost').value),
-        total_cost: Number(document.getElementById('total_cost').value),
-        model: document.getElementById('model').value.trim()
-      };
+    const article = {
+      title: document.getElementById('title').value.trim(),
+      link: document.getElementById('link').value.trim(),
+      summary: document.getElementById('summary').value.trim(),
+      reasons: document.getElementById('reasons').value.trim(),
+      tags: document.getElementById('tags').value.trim(),
+      relevancy_score: Number(document.getElementById('relevancy_score').value),
+      urgency_score: Number(document.getElementById('urgency_score').value),
+      overall_score: Number(document.getElementById('overall_score').value),
+      input_cost: Number(document.getElementById('input_cost').value),
+      output_cost: Number(document.getElementById('output_cost').value),
+      total_cost: Number(document.getElementById('total_cost').value),
+      model: document.getElementById('model').value.trim()
+    };
 
-      fetch(apiBase, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(article)
-      })
-      .then(async res => {
-        const contentType = res.headers.get('content-type') || '';
-        let data = contentType.includes('application/json') ? await res.json() : await res.text();
+    fetch(apiBase, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(article)
+    })
+    .then(async res => {
+      const contentType = res.headers.get('content-type') || '';
+      let data = contentType.includes('application/json') ? await res.json() : await res.text();
 
-        if (res.status >= 400) {
-          responseMessage.textContent = `Error ${res.status}: ` + (typeof data === 'string' ? data : JSON.stringify(data));
-          responseMessage.classList.add('error');
-        } else {
-          responseMessage.textContent = `Success ${res.status}: Article added.`;
-          responseMessage.classList.add('success');
-          document.getElementById('articlesForm').reset();
-          load_articles(currentPage);
-        }
-      })
-      .catch(err => {
-        responseMessage.textContent = 'Network or server error: ' + err.message;
+      if (res.status >= 400) {
+        responseMessage.textContent = `Error ${res.status}: ` + (typeof data === 'string' ? data : JSON.stringify(data));
         responseMessage.classList.add('error');
-      });
+      } else {
+        responseMessage.textContent = `Success ${res.status}: Article added.`;
+        responseMessage.classList.add('success');
+        document.getElementById('articlesForm').reset();
+        load_articles(currentPage);
+      }
+    })
+    .catch(err => {
+      responseMessage.textContent = 'Network or server error: ' + err.message;
+      responseMessage.classList.add('error');
     });
+  });
 
-    load_articles(currentPage);
-  </script>
+  load_articles(currentPage);
+</script>
+
 </body>
 </html>
