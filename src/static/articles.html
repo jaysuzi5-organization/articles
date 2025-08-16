@@ -63,6 +63,15 @@
 
   <h2>Articles List</h2>
 
+  <!-- Days back filter -->
+  <div id="daysBackControls" style="margin-bottom: 1rem;">
+    <label for="daysBackInput" style="font-weight:600; font-size:0.9rem; color: var(--blue-dark);">
+      Days back:
+    </label>
+    <input type="number" id="daysBackInput" min="1" value="1" style="width:70px;">
+  </div>
+
+  <!-- Pagination Controls -->
   <div id="paginationControls" aria-label="Pagination controls">
     <button id="prevPage" disabled>Previous</button>
     <span>Page <span id="currentPage">1</span></span>
@@ -107,23 +116,37 @@
   const nextPageBtn = document.getElementById('nextPage');
   const pageSizeSelect = document.getElementById('pageSizeSelect');
   const tableHeaders = document.querySelectorAll('#articlesTable thead th');
+  const daysBackInput = document.getElementById('daysBackInput');
 
   let currentPage = 1;
   let sortBy = 'create_date';   // default sort column
   let sortOrder = 'desc';       // default order
+  let daysBack = Number(daysBackInput.value) || 1;
 
   function getPageSize() {
     return Number(pageSizeSelect.value);
   }
+
+  daysBackInput.addEventListener('change', () => {
+    if (daysBackInput.value < 1) {
+      daysBackInput.value = 1;
+    }
+    currentPage = 1;
+    load_articles(currentPage);
+  });
+
 
   async function load_articles(page = 1) {
     responseMessage.textContent = '';
     responseMessage.className = '';
 
     const pageSize = getPageSize();
+    daysBack = Number(daysBackInput.value) || 1;
 
     try {
-      const res = await fetch(`${apiBase}?page=${page}&limit=${pageSize}&sort_by=${sortBy}&sort_order=${sortOrder}`);
+      const res = await fetch(
+        `${apiBase}?page=${page}&limit=${pageSize}&sort_by=${sortBy}&sort_order=${sortOrder}&days_back=${daysBack}`
+      );
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
 
       const data = await res.json();

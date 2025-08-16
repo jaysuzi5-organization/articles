@@ -1,9 +1,10 @@
 from framework.db import get_db
 from models.articles import Articles, ArticlesCreate, ArticlesSearch
 from fastapi import APIRouter, Depends, HTTPException, Body, Query
-from sqlalchemy import and_
+from sqlalchemy import and_, asc, desc
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, UTC
+
 
 router = APIRouter()
 
@@ -44,22 +45,25 @@ def get_articles_by_id(article_id: int, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
-
 @router.get("/api/v1/articles")
 def list_articles(
     page: int = Query(1, ge=1, description="Page number to retrieve"),
     limit: int = Query(10, ge=1, le=100, description="Number of records per page"),
     days_back: int | None = Query(None, ge=0, description="Optional number of days back to filter articles"),
+    sort_by: str | None = Query(None, description="Column to sort by (e.g. 'create_date', 'title')"),
+    sort_order: str | None = Query(None, regex="^(asc|desc)$", description="Sort order: 'asc' or 'desc'"),
     db: Session = Depends(get_db)
 ):
     """
     Retrieve a paginated list of articles records, optionally filtered by how many days back.
-    Results are sorted descending by create_date.
+    Results are sorted by the specified column and order. Defaults to descending by create_date.
 
     Args:
         page (int): Page number starting from 1.
         limit (int): Maximum number of records to return per page.
         days_back (int | None): Optional number of days back to filter articles.
+        sort_by (str | None): Column to sort by (default: 'create_date').
+        sort_order (str | None): 'asc' or 'desc' (default: 'desc').
         db (Session): SQLAlchemy database session.
 
     Returns:
@@ -73,8 +77,20 @@ def list_articles(
             cutoff = datetime.now(UTC) - timedelta(days=days_back)
             query = query.filter(Articles.create_date >= cutoff)
 
-        # Sort descending by create_date
-        query = query.order_by(Articles.create_date.desc())
+        # Sorting
+        if sort_by is None:
+            # Default sort
+            query = query.order_by(Articles.create_date.desc())
+        else:
+            # Ensure the column exists
+            if not hasattr(Articles, sort_by):
+                raise HTTPException(status_code=400, detail=f"Invalid sort_by field: {sort_by}")
+
+            column = getattr(Articles, sort_by)
+            if sort_order == "asc":
+                query = query.order_by(asc(column))
+            else:  # default or explicit "desc"
+                query = query.order_by(desc(column))
 
         # Pagination
         offset = (page - 1) * limit
@@ -82,8 +98,11 @@ def list_articles(
 
         return [serialize_sqlalchemy_obj(item) for item in articles_records]
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
 
 @router.post("/api/v1/articles")
 def create_record(
